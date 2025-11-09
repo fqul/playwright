@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import { devices } from 'playwright-core';
 import { z } from '../../sdk/bundle';
 import { defineTool, defineTabTool } from './tool';
 
@@ -26,11 +27,24 @@ const navigate = defineTool({
     description: 'Navigate to a URL',
     inputSchema: z.object({
       url: z.string().describe('The URL to navigate to'),
+      device: z.string().optional().describe('Device name to emulate (e.g., "iPhone 13", "Pixel 5")'),
     }),
     type: 'action',
   },
 
   handle: async (context, params, response) => {
+    let needSwitch = false;
+    if (params.device) {
+      if (params.device in devices)
+        needSwitch = await context.switchContext(devices[params.device]);
+      else
+        throw new Error(`Device ${params.device} NOT Found.`);
+    }
+
+    if (needSwitch && context.currentTab())
+      await context.newTab();
+
+
     const tab = await context.ensureTab();
     await tab.navigate(params.url);
 

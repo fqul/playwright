@@ -19,6 +19,7 @@ import path from 'path';
 
 import { debug } from 'playwright-core/lib/utilsBundle';
 import { selectors } from 'playwright-core';
+import { DeviceDescriptor } from 'playwright-core/lib/server/types';
 
 import { logUnhandledError } from '../log';
 import { Tab } from './tab';
@@ -263,6 +264,29 @@ export class Context {
       value: this.config.secrets[secretName]!,
       code: `process.env['${secretName}']`,
     };
+  }
+
+  async switchContext(deviceInfo: DeviceDescriptor) {
+    const options = this.config.browser.contextOptions;
+
+    if (options.userAgent === deviceInfo.userAgent
+      && options.viewport === deviceInfo.viewport
+      && options.deviceScaleFactor === deviceInfo.deviceScaleFactor
+      && options.isMobile === deviceInfo.isMobile
+      && options.hasTouch === deviceInfo.hasTouch)
+      return false;
+
+    // update config
+    options.userAgent = deviceInfo.userAgent;
+    options.viewport = deviceInfo.viewport;
+    options.deviceScaleFactor = deviceInfo.deviceScaleFactor;
+    options.isMobile = deviceInfo.isMobile;
+    options.hasTouch = deviceInfo.hasTouch;
+
+    this._browserContextPromise = undefined;
+
+    await this._ensureBrowserContext();
+    return true;
   }
 }
 
