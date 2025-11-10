@@ -13,26 +13,40 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 import { devices } from 'playwright-core';
+import { defineTool } from './tool';
 import { z } from '../../sdk/bundle';
-import { defineTool, defineTabTool } from './tool';
+import type { Context } from 'playwright/lib/mcp/browser/context';
+import type { Response } from 'playwright/lib/mcp/browser/response';
 
-const navigate = defineTool({
+
+const listDevices = defineTool({
   capability: 'core',
-
   schema: {
-    name: 'browser_navigate',
-    title: 'Navigate to a URL',
-    description: 'Navigate to a URL',
+    name: 'device_list',
+    title: 'List all devices available',
+    description: 'List all devices available',
+    inputSchema: z.object({}),
+    type: 'action'
+  },
+  handle: async (context: Context, p, response: Response) => {
+    response.addResult(JSON.stringify(devices));
+  },
+});
+
+
+const switchDevice = defineTool({
+  capability: 'core',
+  schema: {
+    name: 'device_switch',
+    title: 'Switch device',
+    description: 'Switch device',
     inputSchema: z.object({
-      url: z.string().describe('The URL to navigate to'),
       device: z.string().optional().describe('Device name to emulate (e.g., "iPhone 13", "Pixel 5")'),
     }),
-    type: 'action',
+    type: 'action'
   },
-
-  handle: async (context, params, response) => {
+  handle: async (context: Context, params, response: Response) => {
     let needSwitch = false;
     if (params.device) {
       if (params.device in devices)
@@ -40,36 +54,14 @@ const navigate = defineTool({
       else
         throw new Error(`Device ${params.device} NOT Found.`);
     }
-
-    if (needSwitch && context.currentTab())
-      await context.newTab();
-
-    const tab = await context.ensureTab();
-    await tab.navigate(params.url);
-
-    response.setIncludeSnapshot();
-    response.addCode(`await page.goto('${params.url}');`);
-  },
-});
-
-const goBack = defineTabTool({
-  capability: 'core',
-  schema: {
-    name: 'browser_navigate_back',
-    title: 'Go back',
-    description: 'Go back to the previous page',
-    inputSchema: z.object({}),
-    type: 'action',
-  },
-
-  handle: async (tab, params, response) => {
-    await tab.page.goBack();
-    response.setIncludeSnapshot();
-    response.addCode(`await page.goBack();`);
+    if (needSwitch)
+      response.addCode(`await context.switchContext(${params.device})`);
+    else
+      response.addCode(`OK`);
   },
 });
 
 export default [
-  navigate,
-  goBack,
+  listDevices,
+  switchDevice
 ];

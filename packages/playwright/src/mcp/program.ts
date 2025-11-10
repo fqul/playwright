@@ -132,7 +132,11 @@ export function decorateCommand(command: Command, version: string) {
           name: 'Playwright',
           nameInConfig: 'playwright',
           version,
-          create: () => new BrowserServerBackend(config, browserContextFactory)
+          create: () => {
+            const _config = JSON.parse(JSON.stringify(config));
+            const _contextFactory = contextFactory(_config);
+            return new BrowserServerBackend(_config, _contextFactory);
+          }
         };
         await mcpServer.start(factory, config.server);
       });

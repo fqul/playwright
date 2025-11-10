@@ -276,6 +276,8 @@ export class Context {
       && options.hasTouch === deviceInfo.hasTouch)
       return false;
 
+    await this.closeBrowserContext();
+
     // update config
     options.userAgent = deviceInfo.userAgent;
     options.viewport = deviceInfo.viewport;

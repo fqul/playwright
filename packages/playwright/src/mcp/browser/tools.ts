@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+import devices from './tools/devices';
 import common from './tools/common';
 import console from './tools/console';
 import dialogs from './tools/dialogs';
@@ -55,6 +56,7 @@ export const browserTools: Tool<any>[] = [
   ...tracing,
   ...wait,
   ...verify,
+  ...devices
 ];
 
 export function filteredTools(config: FullConfig) {
